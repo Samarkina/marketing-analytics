@@ -3,15 +3,15 @@ package com.samarkina.bigdata
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.functions._
 
 
 object MarketingAnalyticsApp {
-
   def main(args: Array[String]): Unit = {
 
     val spark = SparkSession
       .builder()
-      .appName("Spark SQL basic example")
+      .appName("Spark SQL")
       .config("spark.master", "local")
       .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
@@ -42,6 +42,17 @@ object MarketingAnalyticsApp {
       .select("userId","eventId", "eventTime", "eventType", "jsonData.*", "jsonData2.*")
     dfFromCSVJSON.printSchema()
     dfFromCSVJSON.show(false)
+
+    var inc = 0
+    val coder = (eventType: String, userId: String) => {
+      if (eventType == "app_open")
+        inc += 1
+      userId + "_s" + inc
+    }
+    val sqlfunc = spark.udf.register("coders", coder)
+
+    dfFromCSVJSON.withColumn("sessionId", sqlfunc(col("eventType"), col("userId"))).show()
+
 
   }
 }
