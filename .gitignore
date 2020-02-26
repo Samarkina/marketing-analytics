@@ -1,0 +1,45 @@
+/src/main/resources/*
+
+### Project ###
+**/dependency-reduced-pom.xml
+**/derby.log
+**/*airflow-dags.zip
+docker/local-run/creds
+docker/local-run/dags
+
+
+### Maven ###
+**/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### STS ###
+**/.apt_generated
+**/.classpath
+**/.factorypath
+**/.project
+**/.settings
+**/.springBeans
+
+### IntelliJ IDEA ###
+**/.idea
+**/*.iws
+**/*.iml
+**/*.ipr
+
+### NetBeans ###
+**/nbproject/private/
+**/build/
+**/nbbuild/
+**/dist/
+**/nbdist/
+**/.nb-gradle/
+
+### Python ###
+**/venv/
+**/__pycache__/
+
+### Other ###
+**/build/
+**/build0/
+**/build1/
+.DS_Store
