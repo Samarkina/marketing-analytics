@@ -21,7 +21,7 @@ object TopCampaigns {
         |GROUP BY c.channelId
         |ORDER BY Cost DESC
         |LIMIT 10
-        |""".stripMargin).show()
+        |""".stripMargin)
   }
 
   def averageDataFrame(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
@@ -42,8 +42,8 @@ object TopCampaigns {
           "Clicks.channelId",
           "cost"
         )
+
     avgTable
-      .show(100)
 
   }
 }

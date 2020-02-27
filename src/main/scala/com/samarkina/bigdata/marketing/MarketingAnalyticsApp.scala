@@ -3,6 +3,7 @@ import com.samarkina.bigdata.{MobileAppClick, Purchase}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Dataset, SparkSession}
+
 object MarketingAnalyticsApp {
 
   def getTargetTable(purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
@@ -27,7 +28,7 @@ object MarketingAnalyticsApp {
     val spark = SparkSession
       .builder()
       .appName("Spark SQL")
-      .config("spark.master", "local")
+      .config("spark.master", "local[2]")
       .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
 
@@ -42,13 +43,14 @@ object MarketingAnalyticsApp {
     getTargetTable(purchaseDataset, mobileAppClickDataset)
 
     // Task 2.1
-    TopCampaigns.averagePlainSQL(spark, purchaseDataset, mobileAppClickDataset)
-    TopCampaigns.averageDataFrame(spark, purchaseDataset, mobileAppClickDataset)
+    TopCampaigns.averagePlainSQL(spark, purchaseDataset, mobileAppClickDataset).show()
+    TopCampaigns.averageDataFrame(spark, purchaseDataset, mobileAppClickDataset).show()
 
    // Task 2.2
-    ChannelsPerformance.highestAmountPlainSQL(spark, purchaseDataset, mobileAppClickDataset)
-    ChannelsPerformance.highestAmountDataFrame(spark, purchaseDataset, mobileAppClickDataset)
+    ChannelsPerformance.highestAmountPlainSQL(spark, purchaseDataset, mobileAppClickDataset).show()
+    ChannelsPerformance.highestAmountDataFrame(spark, purchaseDataset, mobileAppClickDataset).show()
 
 
+    spark.stop()
   }
 }

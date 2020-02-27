@@ -20,7 +20,7 @@ object ChannelsPerformance {
         |   FROM Clicks AS c
         |)
         |GROUP BY channelId
-        |""".stripMargin).show()
+        |""".stripMargin)
   }
 
   def highestAmountDataFrame(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
@@ -34,7 +34,7 @@ object ChannelsPerformance {
       .groupBy("channelId")
       .count()
 
-    highestAmountTable.show()
+    highestAmountTable
 
   }
 
