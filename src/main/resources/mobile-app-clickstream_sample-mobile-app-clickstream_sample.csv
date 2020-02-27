@@ -36,5 +36,5 @@ u3,u3_e18,2019-01-02 2:15:40,app_close,
 u3,u3_e19,2019-01-02 13:00:10,app_open,"{""campaign_id"": ""cmp2"",  ""channel_id"": ""Yandex Ads""}"
 u3,u3_e20,2019-01-02 13:00:25,search_product,
 u3,u3_e21,2019-01-02 13:01:20,view_product_details,
-u3,u3_e22,2019-01-02 13:03:00,purchase,"{""purchase_id"": “p6""}"
+u3,u3_e22,2019-01-02 13:03:00,purchase,"{""purchase_id"": ""p6""}"
 u3,u3_e23,2019-01-02 13:06:00,app_close,
