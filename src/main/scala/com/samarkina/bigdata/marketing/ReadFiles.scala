@@ -1,12 +1,12 @@
 package com.samarkina.bigdata.marketing
 
 import com.samarkina.bigdata.{MobileAppClick, Purchase}
-//import com.samarkina.bigdata.marketing.MarketingAnalyticsApp.{campaignChannelSetter, sessionIdSetter}
 import org.apache.spark.sql.{Dataset, SparkSession}
 import org.apache.spark.sql.functions.{col, from_json}
 import org.apache.spark.sql.types.{DoubleType, StringType, StructField, StructType}
 
 object ReadFiles {
+
   def campaignChannelSetter = {
     var currentId = ""
     (campaignChannelId: String) => {
