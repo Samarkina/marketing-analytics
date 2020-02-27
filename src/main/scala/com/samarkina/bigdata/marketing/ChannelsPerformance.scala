@@ -1,8 +1,7 @@
 package com.samarkina.bigdata.marketing
 
 import com.samarkina.bigdata.{MobileAppClick, Purchase}
-import org.apache.spark.sql.functions.{avg, col}
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{Dataset, SparkSession}
 
 // Task 2.2
 object ChannelsPerformance {
@@ -24,7 +23,6 @@ object ChannelsPerformance {
   }
 
   def highestAmountDataFrame(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
-    import spark.implicits._
     val innerTable = mobileAppClickDataset.as("Clicks")
       .select("channelId", "sessionId")
       .distinct()
