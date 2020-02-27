@@ -101,10 +101,11 @@ object MarketingAnalyticsApp {
 //    getTargetTable(purchaseDf, mobileAppClick2)
 
     // Task 2.1
-    TopCampaigns.averagePlainSQL(spark, purchaseDf, mobileAppClick2)
+//    TopCampaigns.averagePlainSQL(spark, purchaseDf, mobileAppClick2)
+//
+//    TopCampaigns.averageDataFrame(spark, purchaseDf, mobileAppClick2)
 
-    TopCampaigns.averageDataFrame(spark, purchaseDf, mobileAppClick2)
-
+    ChannelsPerformance.highestAmountPlainSQL(spark, purchaseDf, mobileAppClick2)
 
 
 
