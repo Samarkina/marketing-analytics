@@ -7,5 +7,7 @@ case class MobileAppClick(
   eventId: String,
   eventTime: Timestamp,
   eventType: String,
-  attributes: Option[Map[String, String]]
+  channelId: String,
+  campaignId: String,
+  sessionId: String
 )

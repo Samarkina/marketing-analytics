@@ -1,23 +1,17 @@
 package com.samarkina.bigdata.marketing
-
-import com.samarkina.bigdata.Purchase
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.samarkina.bigdata.{MobileAppClick, Purchase}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.functions._
-
-
+import org.apache.spark.sql.{Dataset, SparkSession}
 object MarketingAnalyticsApp {
-
   def campaignChannelSetter = {
-    var channel_id_global = ""
-    (campaign_channel_id: String) => {
-      if (campaign_channel_id != null)
-        channel_id_global = campaign_channel_id
-      channel_id_global
+    var currentId = ""
+    (campaignChannelId: String) => {
+      if (campaignChannelId != null)
+        currentId = campaignChannelId
+      currentId
     }
   }
-
   def sessionIdSetter = {
     var inc = 0
     (eventType: String, userId: String) => {
@@ -26,93 +20,82 @@ object MarketingAnalyticsApp {
       userId + "_s" + inc
     }
   }
-
-  def getTargetTable(purchaseDf: DataFrame, mobileAppClick2: DataFrame) = {
-    val target = purchaseDf.join(
-      mobileAppClick2,
-      col("purchaseId") === col("purchase_id"),
+  def getTargetTable(purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
+    purchaseDataset.as("pr").join(
+      mobileAppClickDataset.as("mac"),
+      col("pr.purchaseId") === col("mac.purchaseId"),
       "left"
     )
-      .filter("purchaseId IS NOT NULL")
-
-    target.select(
-      col("purchaseId"),
-      col("purchaseTime"),
-      col("billingCost"),
-      col("isConfirmed"),
-      col("sessionId"),
-      col("campaign_id"),
-      col("channel_id")
-    ) .show(100)
+      .filter("pr.purchaseId IS NOT NULL")
+      .select(
+        col("pr.purchaseId"),
+        col("purchaseTime"),
+        col("billingCost"),
+        col("isConfirmed"),
+        col("sessionId"),
+        col("campaignId"),
+        col("channelId")
+      ).show(100)
   }
-
   def main(args: Array[String]): Unit = {
-
     val spark = SparkSession
       .builder()
       .appName("Spark SQL")
       .config("spark.master", "local")
       .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
+
     spark.sparkContext.setLogLevel("WARN")
 
     import spark.implicits._
 
-    val dfFromCSV = spark.read
+    val schemaAppOpen = StructType(Array(
+      StructField("campaign_id", StringType, true),
+      StructField("channel_id", StringType, true)
+    ))
+
+    val schemaPurchase = StructType(Array(
+      StructField("purchase_id", StringType, true)
+    ))
+
+    val sessionIdSet = spark.udf.register("sessionIdSetter", sessionIdSetter).asNondeterministic()
+    val channelSetter = spark.udf.register("channelSetter", campaignChannelSetter).asNondeterministic()
+    val campaignSetter = spark.udf.register("campaignSetter", campaignChannelSetter).asNondeterministic()
+
+    val mobileAppClickDataset = spark.read
       .option("escape", "\"")
       .option("header", "true")
       .csv("src/main/resources/mobile-app-clickstream_sample-mobile-app-clickstream_sample.csv")
 
-    val schemaAppOpen = StructType(Array(
-      StructField("campaign_id",StringType,true),
-      StructField("channel_id",StringType,true)
-    ))
+      .select(col("userId"), col("eventId"), col("eventTime"), col("eventType"),
+        from_json(col("attributes"), schemaAppOpen).as("jsonData"),
+        from_json(col("attributes"), schemaPurchase).as("jsonData2"))
+      .select("userId", "eventId", "eventTime", "eventType", "jsonData.*", "jsonData2.*")
 
-    val schemaPurchase = StructType(Array(
-      StructField("purchase_id",StringType,true)
-    ))
+      .withColumn("sessionId", sessionIdSet(col("eventType"), col("userId")))
+      .withColumn("channelId", channelSetter(col("channel_id")))
+      .withColumn("campaignId", campaignSetter(col("campaign_id")))
 
-    val dfFromCSVJSON =  dfFromCSV.select(col("userId"), col("eventId"), col("eventTime"), col("eventType"),
-      from_json(col("attributes"),schemaAppOpen).as("jsonData"),
-      from_json(col("attributes"),schemaPurchase).as("jsonData2")
-    )
-      .select("userId","eventId", "eventTime", "eventType", "jsonData.*", "jsonData2.*")
+      .withColumnRenamed("purchase_id", "purchaseId")
+      .as[MobileAppClick]
 
-    val sessionIdSet = spark.udf.register("sessionIdSetter", sessionIdSetter).asNondeterministic()
-
-    val mobileAppClick = dfFromCSVJSON.withColumn("sessionId", sessionIdSet(col("eventType"), col("userId")))
-
-    val channelSetter = spark.udf.register("channelSetter", campaignChannelSetter).asNondeterministic()
-
-    val campaignSetter = spark.udf.register("campaignSetter", campaignChannelSetter).asNondeterministic()
-
-    val mobileAppClick2 = mobileAppClick
-      .withColumn("channel_id", channelSetter(col("channel_id")))
-      .withColumn("campaign_id", campaignSetter(col("campaign_id")))
-
-    val purchaseDf = spark.read
+    val purchaseDataset = spark.read
       .option("escape", "\"")
       .option("header", "true")
       .csv("src/main/resources/purchases_sample-purchases_sample.csv")
       .withColumn("billingCost", 'billingCost.cast(DoubleType))
-
+      .as[Purchase]
 
     // Task 1.1
-    getTargetTable(purchaseDf, mobileAppClick2)
+    getTargetTable(purchaseDataset, mobileAppClickDataset)
 
     // Task 2.1
-    TopCampaigns.averagePlainSQL(spark, purchaseDf, mobileAppClick2)
-
-    TopCampaigns.averageDataFrame(spark, purchaseDf, mobileAppClick2)
-
-    // Task 2.2
-    ChannelsPerformance.highestAmountPlainSQL(spark, purchaseDf, mobileAppClick2)
-
-    ChannelsPerformance.highestAmountDataFrame(spark, purchaseDf, mobileAppClick2)
-
-
-
-
+    TopCampaigns.averagePlainSQL(spark, purchaseDataset, mobileAppClickDataset)
+    TopCampaigns.averageDataFrame(spark, purchaseDataset, mobileAppClickDataset)
+//
+//    // Task 2.2
+    ChannelsPerformance.highestAmountPlainSQL(spark, purchaseDataset, mobileAppClickDataset)
+    ChannelsPerformance.highestAmountDataFrame(spark, purchaseDataset, mobileAppClickDataset)
 
 
   }

@@ -1,39 +1,37 @@
 package com.samarkina.bigdata.marketing
 
+import com.samarkina.bigdata.{MobileAppClick, Purchase}
 import org.apache.spark.sql.functions.{avg, col}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
 // Task 2.2
 object ChannelsPerformance {
 
-  def highestAmountPlainSQL(spark: SparkSession, purchaseDf: DataFrame, mobileAppClick2: DataFrame) = {
-    purchaseDf.createOrReplaceTempView("Purchases")
-    mobileAppClick2.createOrReplaceTempView("Clicks")
+  def highestAmountPlainSQL(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
+    purchaseDataset.createOrReplaceTempView("Purchases")
+    mobileAppClickDataset.createOrReplaceTempView("Clicks")
 
     spark.sql(
       """
-        |SELECT channel_id, COUNT(channel_id)
+        |SELECT channelId, COUNT(channelId) AS count
         |FROM
         |(
-        |   SELECT DISTINCT c.channel_id, c.sessionId
+        |   SELECT DISTINCT c.channelId, c.sessionId
         |   FROM Clicks AS c
         |)
-        |GROUP BY channel_id
+        |GROUP BY channelId
         |""".stripMargin).show()
   }
 
-  def highestAmountDataFrame(spark: SparkSession, purchaseDf: DataFrame, mobileAppClick2: DataFrame) = {
-    val purchaseDfasPurchases = purchaseDf.as("Purchases")
-    val mobileAppClickasClicks = mobileAppClick2.as("Clicks")
-
+  def highestAmountDataFrame(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
     import spark.implicits._
-    val innerTable = mobileAppClickasClicks
-      .select("channel_id", "sessionId")
+    val innerTable = mobileAppClickDataset.as("Clicks")
+      .select("channelId", "sessionId")
       .distinct()
 
     val highestAmountTable = innerTable
-      .select("channel_id")
-      .groupBy("channel_id")
+      .select("channelId")
+      .groupBy("channelId")
       .count()
 
     highestAmountTable.show()

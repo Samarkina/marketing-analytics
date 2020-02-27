@@ -1,49 +1,46 @@
 package com.samarkina.bigdata.marketing
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.samarkina.bigdata.{MobileAppClick, Purchase}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.functions._
 
 // Task 2.1
 object TopCampaigns {
-  def averagePlainSQL(spark: SparkSession, purchaseDf: DataFrame, mobileAppClick2: DataFrame) = {
-    purchaseDf.createOrReplaceTempView("Purchases")
-    mobileAppClick2.createOrReplaceTempView("Clicks")
+  def averagePlainSQL(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
+    purchaseDataset.createOrReplaceTempView("Purchases")
+    mobileAppClickDataset.createOrReplaceTempView("Clicks")
 
     spark.sql(
       """
-        |SELECT c.channel_id AS Name, AVG(p.billingCost) AS Cost
+        |SELECT c.channelId, AVG(p.billingCost) AS cost
         |FROM Purchases AS p
         |JOIN Clicks AS c
-        |ON p.purchaseId = c.purchase_id
+        |ON p.purchaseId = c.purchaseId
         |WHERE p.purchaseId IS NOT NULL
         |AND p.isConfirmed = "TRUE"
-        |GROUP BY c.channel_id
+        |GROUP BY c.channelId
         |ORDER BY Cost DESC
         |LIMIT 10
         |""".stripMargin).show()
   }
 
-  def averageDataFrame(spark: SparkSession, purchaseDf: DataFrame, mobileAppClick2: DataFrame) = {
-
-    val purchaseDfasPurchases = purchaseDf.as("Purchases")
-    val mobileAppClickasClicks = mobileAppClick2.as("Clicks")
-
+  def averageDataFrame(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
     import spark.implicits._
-    val avgTable = purchaseDfasPurchases.join(
-      mobileAppClickasClicks,
-      col("Purchases.purchaseId") === col("Clicks.purchase_id"),
+    val avgTable = purchaseDataset.as("Purchases").join(
+      mobileAppClickDataset.as("Clicks"),
+      col("Purchases.purchaseId") === col("Clicks.purchaseId"),
       "left"
     )
       .filter("Purchases.purchaseId IS NOT NULL")
       .filter(("""Purchases.isConfirmed = "TRUE" """ ))
       .orderBy($"billingCost".desc)
-      .groupBy("Clicks.channel_id")
+      .groupBy("Clicks.channelId")
       .agg(
-        avg($"Purchases.billingCost").as("Cost")
+        avg($"Purchases.billingCost").as("cost")
       )
         .select(
-          "Clicks.channel_id",
-          "Cost"
+          "Clicks.channelId",
+          "cost"
         )
     avgTable
       .show(100)
