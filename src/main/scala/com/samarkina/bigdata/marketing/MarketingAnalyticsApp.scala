@@ -1,13 +1,13 @@
-package com.samarkina.bigdata
+package com.samarkina.bigdata.marketing
 
-import org.apache.spark.sql.SparkSession
+import com.samarkina.bigdata.Purchase
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
 
 
 object MarketingAnalyticsApp {
-
 
   def campaignChannelSetter = {
     var channel_id_global = ""
@@ -25,6 +25,25 @@ object MarketingAnalyticsApp {
         inc += 1
       userId + "_s" + inc
     }
+  }
+
+  def getTargetTable(purchaseDf: DataFrame, mobileAppClick2: DataFrame) = {
+    val target = purchaseDf.join(
+      mobileAppClick2,
+      col("purchaseId") === col("purchase_id"),
+      "left"
+    )
+      .filter("purchaseId IS NOT NULL")
+
+    target.select(
+      col("purchaseId"),
+      col("purchaseTime"),
+      col("billingCost"),
+      col("isConfirmed"),
+      col("sessionId"),
+      col("campaign_id"),
+      col("channel_id")
+    ) .show(100)
   }
 
   def main(args: Array[String]): Unit = {
@@ -76,23 +95,19 @@ object MarketingAnalyticsApp {
       .option("header", "true")
       .csv("src/main/resources/purchases_sample-purchases_sample.csv")
       .withColumn("billingCost", 'billingCost.cast(DoubleType))
-      .as[Purchase]
 
-    val target = purchaseDf.join(
-      mobileAppClick2,
-      col("purchaseId") === col("purchase_id"),
-      "left"
-    )
-      .filter("purchaseId IS NOT NULL")
 
-    target.select(
-      col("purchaseId"),
-      col("purchaseTime"),
-      col("billingCost"),
-      col("isConfirmed"),
-      col("sessionId"),
-      col("campaign_id"),
-      col("channel_id")
-    ) .show(100)
+    // Task 1.1
+    getTargetTable(purchaseDf, mobileAppClick2)
+
+    // Task 2.1
+    TopCampaigns.averagePlainSQL(spark, purchaseDf, mobileAppClick2)
+
+
+
+
+
+
+
   }
 }
