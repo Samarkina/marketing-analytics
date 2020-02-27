@@ -1,12 +1,18 @@
 package com.samarkina.bigdata.marketing
 
 import com.samarkina.bigdata.{MobileAppClick, Purchase}
-import org.apache.spark.sql.{Dataset, SparkSession}
+import org.apache.spark.sql.{Dataset, Encoders, SparkSession}
 import org.apache.spark.sql.functions.{col, from_json}
 import org.apache.spark.sql.types.{DoubleType, StringType, StructField, StructType}
 
+/**
+  * Contains utility functions for reading datasets.
+  */
 object ReadFiles {
 
+  /**
+    * Sets appropriate channelId and campaignId values where column is null in current App Session.
+    */
   def campaignChannelSetter = {
     var currentId = ""
     (campaignChannelId: String) => {
@@ -16,6 +22,10 @@ object ReadFiles {
     }
   }
 
+  /**
+    * Fills sessionId column based on usedId and current sessions count.
+    * Example of generated sessionId: u1_s1.
+    */
   def sessionIdSetter = {
     var inc = 0
     (eventType: String, userId: String) => {
@@ -25,7 +35,15 @@ object ReadFiles {
     }
   }
 
-  def reading(spark: SparkSession, pathClicks: String, pathPurchase: String): (Dataset[Purchase], Dataset[MobileAppClick]) = {
+  /**
+    * Reads files and creates datasets based on their contents.
+    *
+    * @param spark SparkSession
+    * @param pathClicks path to Mobile App Clickstream file
+    * @param pathPurchase path to Purchases file
+    * @return Two datasets with Purchase and MobileAppClick types
+    */
+  def readDatasets(spark: SparkSession, pathClicks: String, pathPurchase: String): (Dataset[Purchase], Dataset[MobileAppClick]) = {
 
     import spark.implicits._
 
@@ -62,8 +80,8 @@ object ReadFiles {
     val purchaseDataset = spark.read
       .option("escape", "\"")
       .option("header", "true")
+      .schema(Encoders.product[Purchase].schema)
       .csv(pathPurchase)
-      .withColumn("billingCost", 'billingCost.cast(DoubleType))
       .as[Purchase]
 
     (purchaseDataset, mobileAppClickDataset)

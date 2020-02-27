@@ -3,8 +3,20 @@ import com.samarkina.bigdata.{MobileAppClick, Purchase, TargetSchema}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Dataset, SparkSession}
 
+/**
+  * Main class of the MarketingAnalyticsApp
+  */
 object MarketingAnalyticsApp {
 
+  /**
+    * Task 1.1
+    * Returns purchases attribution projection based on incoming datasets.
+    *
+    * @param spark SparkSession
+    * @param purchaseDataset contains Purchases
+    * @param mobileAppClickDataset contains MobileAppClicks
+    * @return Target Dataset for Task 1.1
+    */
   def getTargetTable(spark: SparkSession, purchaseDataset: Dataset[Purchase], mobileAppClickDataset: Dataset[MobileAppClick]) = {
     import spark.implicits._
     purchaseDataset.as("p").join(
@@ -14,7 +26,7 @@ object MarketingAnalyticsApp {
     )
       .filter("p.purchaseId IS NOT NULL")
       .select(
-        col("p.purchaseId"),
+        col("p.purchaseId") as "purchaseId",
         col("purchaseTime"),
         col("billingCost"),
         col("isConfirmed"),
@@ -37,10 +49,13 @@ object MarketingAnalyticsApp {
     val pathClicks = "src/main/resources/mobile-app-clickstream_sample-mobile-app-clickstream_sample.csv"
     val pathPurchase = "src/main/resources/purchases_sample-purchases_sample.csv"
 
-    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.reading(spark, pathClicks, pathPurchase)
+    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.readDatasets(spark, pathClicks, pathPurchase)
 
     // Task 1.1
-    getTargetTable(spark, purchaseDataset, mobileAppClickDataset).show()
+    val targetDataset = getTargetTable(spark, purchaseDataset, mobileAppClickDataset)
+
+    targetDataset.printSchema()
+    targetDataset.show()
 
     // Task 2.1
     TopCampaigns.averagePlainSQL(spark, purchaseDataset, mobileAppClickDataset).show()
@@ -48,7 +63,7 @@ object MarketingAnalyticsApp {
 
    // Task 2.2
     ChannelsPerformance.highestAmountPlainSQL(spark, purchaseDataset, mobileAppClickDataset).show()
-    ChannelsPerformance.highestAmountDataFrame(spark, purchaseDataset, mobileAppClickDataset).show()
+    ChannelsPerformance.highestAmountDataFrame(purchaseDataset, mobileAppClickDataset).show()
 
 
     spark.stop()

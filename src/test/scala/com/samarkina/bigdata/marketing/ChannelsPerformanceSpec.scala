@@ -8,9 +8,9 @@ class ChannelsPerformanceSpec extends AnyWordSpec with Matchers with SparkContex
   val pathPurchase = "src/test/resources/purchases_sample-purchases_sample.csv"
 
   "Task 2.2. Compare two DataSets" in withSparkContext { spark =>
-    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.reading(spark, pathClicks, pathPurchase)
+    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.readDatasets(spark, pathClicks, pathPurchase)
     val first = ChannelsPerformance.highestAmountPlainSQL(spark, purchaseDataset, mobileAppClickDataset)
-    val second = ChannelsPerformance.highestAmountDataFrame(spark, purchaseDataset, mobileAppClickDataset)
+    val second = ChannelsPerformance.highestAmountDataFrame(purchaseDataset, mobileAppClickDataset)
     first.collect() should contain theSameElementsAs (second.collect())
   }
 }

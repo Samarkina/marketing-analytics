@@ -10,7 +10,7 @@ class ReadFilesSpec extends AnyWordSpec with Matchers with SparkContextSetup {
 
 
   "ReadFiles. CampaignChannelSetter" in withSparkContext { spark =>
-    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.reading(spark, pathClicks, pathPurchase)
+    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.readDatasets(spark, pathClicks, pathPurchase)
 
     import spark.implicits._
 
@@ -18,7 +18,7 @@ class ReadFilesSpec extends AnyWordSpec with Matchers with SparkContextSetup {
   }
 
   "ReadFiles. sessionIdSetter" in withSparkContext { spark =>
-    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.reading(spark, pathClicks, pathPurchase)
+    val (purchaseDataset, mobileAppClickDataset) = ReadFiles.readDatasets(spark, pathClicks, pathPurchase)
 
     import spark.implicits._
 
